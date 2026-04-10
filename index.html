@@ -2,48 +2,57 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4A90E2">
   <link rel="manifest" href="manifest.json">
-  <title>PWAテスト</title>
+  <title>PWA Install Test</title>
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f0f2f5; }
+    .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+    button { background-color: #4A90E2; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; display: none; margin-top: 20px; }
+    button:active { background-color: #357ABD; }
+  </style>
 </head>
 <body>
-  <h1>PWAインストールテスト</h1>
-  
-  <!-- 最初は非表示にしておく -->
-  <button id="installBtn" style="display: none; padding: 10px 20px;">
-    アプリをインストールする
-  </button>
+
+  <div class="card">
+    <h1>アプリ化テスト</h1>
+    <p>このページはPWAとしてインストール可能です。</p>
+    <button id="installBtn">アプリをインストールする</button>
+  </div>
 
   <script>
     let deferredPrompt;
     const installBtn = document.getElementById('installBtn');
 
-    // ブラウザがインストール可能だと判断した時に発火
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // ブラウザ標準のバナーが出るのを防ぐ
-      e.preventDefault();
-      // イベントを保存しておく
-      deferredPrompt = e;
-      // 自作のインストールボタンを表示
-      installBtn.style.display = 'block';
-    });
-
-    installBtn.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        // 保存しておいたダイアログを表示
-        deferredPrompt.prompt();
-        // ユーザーの選択を待つ
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log(`ユーザの選択: ${outcome}`);
-        // 一度使ったら無効化
-        deferredPrompt = null;
-        installBtn.style.display = 'none';
-      }
-    });
-
-    // サービスワーカーの登録
+    // 1. サービスワーカーの登録
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker Registered'));
     }
+
+    // 2. インストール可能になった時のイベント
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'inline-block'; // ボタンを表示
+    });
+
+    // 3. ボタンクリック時の処理
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User choice: ${outcome}`);
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    });
+
+    // 4. インストール完了時の処理
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA installed successfully!');
+      alert('インストールが完了しました！');
+    });
   </script>
 </body>
 </html>
